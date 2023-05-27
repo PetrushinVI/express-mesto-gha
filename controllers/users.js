@@ -78,7 +78,7 @@ module.exports.updateUser = (req, res) => {
     .then((user) => res.status(200)
       .send(user))
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
         return res.status(400)
           .send({ message: 'Переданы некорректные данные при обновлении профиля' });
       }
