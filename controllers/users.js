@@ -2,7 +2,7 @@ const userSchema = require('../models/user');
 const {
   BAD_REQUEST,
   NOT_FOUND,
-  INTERNAL_SERVER_ERROR
+  INTERNAL_SERVER_ERROR,
 
 } = require('../utils/errors');
 

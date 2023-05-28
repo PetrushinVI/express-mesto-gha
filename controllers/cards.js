@@ -2,7 +2,7 @@ const cardSchema = require('../models/card');
 const {
   BAD_REQUEST,
   NOT_FOUND,
-  INTERNAL_SERVER_ERROR
+  INTERNAL_SERVER_ERROR,
 
 } = require('../utils/errors');
 
