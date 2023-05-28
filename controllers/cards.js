@@ -1,12 +1,18 @@
 const cardSchema = require('../models/card');
+const {
+  BAD_REQUEST,
+  NOT_FOUND,
+  INTERNAL_SERVER_ERROR
+
+} = require('../utils/errors');
 
 module.exports.getCards = (req, res) => {
   cardSchema
     .find({})
     .then((cards) => res.status(200)
       .send(cards))
-    .catch((err) => res.status(500)
-      .send({ message: err.message }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR)
+      .send({ message: 'Произошла ошибка' }));
 };
 
 module.exports.createCard = (req, res) => {
@@ -26,11 +32,11 @@ module.exports.createCard = (req, res) => {
       .send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400)
+        res.status(BAD_REQUEST)
           .send({ message: 'Переданы некорректные данные при создании карточки' });
       } else {
-        res.status(500)
-          .send({ message: err.message });
+        res.status(INTERNAL_SERVER_ERROR)
+          .send({ message: 'Произошла ошибка' });
       }
     });
 };
@@ -42,7 +48,7 @@ module.exports.deleteCard = (req, res) => {
     .findByIdAndRemove(cardId)
     .then((card) => {
       if (!card) {
-        return res.status(404)
+        return res.status(NOT_FOUND)
           .send({ message: 'Карточка с указанным _id не найдена' });
       }
 
@@ -51,11 +57,11 @@ module.exports.deleteCard = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400)
+        res.status(BAD_REQUEST)
           .send({ message: 'Карточка с указанным _id не найдена' });
       } else {
-        res.status(500)
-          .send({ message: err.message });
+        res.status(INTERNAL_SERVER_ERROR)
+          .send({ message: 'Произошла ошибка' });
       }
     });
 };
@@ -69,7 +75,7 @@ module.exports.addLike = (req, res) => {
     )
     .then((card) => {
       if (!card) {
-        return res.status(404)
+        return res.status(NOT_FOUND)
           .send({ message: 'Передан несуществующий _id карточки' });
       }
 
@@ -78,12 +84,12 @@ module.exports.addLike = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(400)
+        return res.status(BAD_REQUEST)
           .send({ message: 'Переданы некорректные данные для постановки/снятии лайка' });
       }
 
-      return res.status(500)
-        .send({ message: err.message });
+      return res.status(INTERNAL_SERVER_ERROR)
+        .send({ message: 'Произошла ошибка' });
     });
 };
 
@@ -96,7 +102,7 @@ module.exports.deleteLike = (req, res) => {
     )
     .then((card) => {
       if (!card) {
-        return res.status(404)
+        return res.status(NOT_FOUND)
           .send({ message: 'Передан несуществующий _id карточки' });
       }
 
@@ -105,11 +111,11 @@ module.exports.deleteLike = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(400)
+        return res.status(BAD_REQUEST)
           .send({ message: 'Переданы некорректные данные для постановки/снятии лайка' });
       }
 
-      return res.status(500)
-        .send({ message: err.message });
+      return res.status(INTERNAL_SERVER_ERROR)
+        .send({ message: 'Произошла ошибка' });
     });
 };
