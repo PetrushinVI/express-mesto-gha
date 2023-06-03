@@ -25,7 +25,7 @@ app.post('/signin', signInValidation, login);
 app.use(router);
 app.use(limiter);
 app.use(cookieParser());
-// app.use(errorHandler);
+app.use(errorHandler);
 app.use(errors());
 
 app.listen(PORT, () => {
