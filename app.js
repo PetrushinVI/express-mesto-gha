@@ -9,7 +9,7 @@ const { signInValidation, signUpValidation } = require('./middlewares/validation
 const { errors } = require('celebrate');
 
 const app = express();
-
+app.use(express.json());
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -24,9 +24,8 @@ app.post('/signin', signInValidation, login);
 
 app.use(router);
 app.use(limiter);
-app.use(express.json());
 app.use(cookieParser());
-app.use(errorHandler);
+// app.use(errorHandler);
 app.use(errors());
 
 app.listen(PORT, () => {
