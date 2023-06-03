@@ -1,6 +1,6 @@
-const userSchema = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const userSchema = require('../models/user');
 const BadRequest = require('../errors/badRequest');
 const NotFound = require('../errors/notFound');
 const ConflictError = require('../errors/conflictError');
@@ -44,7 +44,7 @@ module.exports.getUserMe = (req, res, next) => {
         next(err);
       }
     });
-}
+};
 
 module.exports.createUser = (req, res, next) => {
   const {
@@ -65,7 +65,12 @@ module.exports.createUser = (req, res, next) => {
           password: hash,
         })
         .then((user) => res.status(201)
-          .send(user))
+          .send({
+            name: user.name,
+            about: user.about,
+            avatar: user.avatar,
+            email: user.email,
+          }))
         .catch((err) => {
           if (err.name === 'ValidationError') {
             next(new BadRequest('Переданы некорректные данные'));
@@ -83,13 +88,13 @@ module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
 
   userSchema.findByIdAndUpdate(
-      req.user._id,
-      { name, about },
-      {
-        new: true,
-        runValidators: true,
-      },
-    )
+    req.user._id,
+    { name, about },
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
     .then((user) => res.status(200)
       .send(user))
     .catch((err) => {
@@ -105,13 +110,13 @@ module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
   userSchema.findByIdAndUpdate(
-      req.user._id,
-      { avatar },
-      {
-        new: true,
-        runValidators: true,
-      },
-    )
+    req.user._id,
+    { avatar },
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
     .then((user) => res.status(200)
       .send(user))
     .catch((err) => {

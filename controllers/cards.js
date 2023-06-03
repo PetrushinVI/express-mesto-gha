@@ -66,10 +66,10 @@ module.exports.addLike = (req, res, next) => {
 
 module.exports.deleteLike = (req, res, next) => {
   cardSchema.findByIdAndUpdate(
-      req.params.cardId,
-      { $pull: { likes: req.user._id } },
-      { new: true },
-    )
+    req.params.cardId,
+    { $pull: { likes: req.user._id } },
+    { new: true },
+  )
     .then((card) => {
       if (!card) {
         return next(new NotFound('Карточка с указанным _id не найдена'));

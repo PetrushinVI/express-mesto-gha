@@ -8,10 +8,7 @@ const errorHandler = require('./middlewares/errorHandler');
 const { createUser, login } = require('./controllers/users');
 const { signInValidation, signUpValidation } = require('./middlewares/validation');
 
-
 const app = express();
-
-
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
