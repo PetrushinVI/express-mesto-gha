@@ -1,81 +1,90 @@
 const userSchema = require('../models/user');
-const {
-  BAD_REQUEST,
-  NOT_FOUND,
-  INTERNAL_SERVER_ERROR,
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const BadRequest = require('../errors/badRequest');
+const NotFound = require('../errors/notFound');
+const ConflictError = require('../errors/conflictError');
 
-} = require('../utils/errors');
-
-module.exports.getUsers = (req, res) => {
-  userSchema
-    .find({})
+module.exports.getUsers = (req, res, next) => {
+  userSchema.find({})
     .then((users) => res.send(users))
-    .catch(() => res.status(INTERNAL_SERVER_ERROR)
-      .send({ message: 'Произошла ошибка' }));
+    .catch(next);
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   const { userId } = req.params;
-
-  userSchema
-    .findById(userId)
-    .orFail()
-    .then((user) => res.send(user))
+  userSchema.findById(userId)
+    .then((user) => {
+      if (user) {
+        res.send({ data: user });
+      } else {
+        throw new NotFound('Пользователь по указанному _id не найден');
+      }
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(BAD_REQUEST)
-          .send({ message: 'Переданы некорректные данные' });
+        return next(new BadRequest('Переданы некорректные данные'));
       }
-
-      if (err.name === 'DocumentNotFoundError') {
-        return res.status(NOT_FOUND)
-          .send({ message: 'Пользователь по указанному _id не найден' });
-      }
-
-      return res.status(INTERNAL_SERVER_ERROR)
-        .send({ message: 'Произошла ошибка' });
+      return next(err);
     });
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.getUserMe = (req, res, next) => {
+  userSchema.findById(req.user._id)
+    .orFail(() => {
+      throw new NotFound('Пользователь не найден');
+    })
+    .then((user) => res.status(200).send(user))
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequest('Переданы некорректные данные'));
+      } else if (err.message === 'NotFound') {
+        next(new NotFound('Пользователь не найден'));
+      } else {
+        next(err);
+      }
+    });
+}
+
+module.exports.createUser = (req, res, next) => {
   const {
     name,
     about,
     avatar,
+    email,
   } = req.body;
 
-  userSchema
-    .create({
-      name,
-      about,
-      avatar,
+  bcrypt.hash(req.body.password, 10)
+    .then((hash) => {
+      userSchema
+        .create({
+          name,
+          about,
+          avatar,
+          email,
+          password: hash,
+        })
+        .then((user) => res.status(201)
+          .send(user))
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            next(new BadRequest('Переданы некорректные данные'));
+          } else if (err.code === 11000) {
+            next(new ConflictError('Пользователь с таким email уже зарегистрирован'));
+          } else {
+            next(err);
+          }
+        });
     })
-    .then((user) => res.status(201)
-      .send(user))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST)
-          .send({ message: 'Переданы некорректные данные при создании пользователя' });
-      } else {
-        res.status(INTERNAL_SERVER_ERROR)
-          .send({ message: 'Произошла ошибка' });
-      }
-    });
+    .catch(next);
 };
 
-module.exports.updateUser = (req, res) => {
-  const {
-    name,
-    about,
-  } = req.body;
+module.exports.updateUser = (req, res, next) => {
+  const { name, about } = req.body;
 
-  userSchema
-    .findByIdAndUpdate(
+  userSchema.findByIdAndUpdate(
       req.user._id,
-      {
-        name,
-        about,
-      },
+      { name, about },
       {
         new: true,
         runValidators: true,
@@ -85,20 +94,17 @@ module.exports.updateUser = (req, res) => {
       .send(user))
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
-        return res.status(BAD_REQUEST)
-          .send({ message: 'Переданы некорректные данные при обновлении профиля' });
+        next(new BadRequest('Переданы некорректные данные'));
+      } else {
+        next(err);
       }
-
-      return res.status(INTERNAL_SERVER_ERROR)
-        .send({ message: 'Произошла ошибка' });
     });
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
-  userSchema
-    .findByIdAndUpdate(
+  userSchema.findByIdAndUpdate(
       req.user._id,
       { avatar },
       {
@@ -110,11 +116,26 @@ module.exports.updateAvatar = (req, res) => {
       .send(user))
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
-        res.status(BAD_REQUEST)
-          .send({ message: 'Переданы некорректные данные при обновлении аватара' });
+        next(new BadRequest('Переданы некорректные данные'));
       } else {
-        res.status(INTERNAL_SERVER_ERROR)
-          .send({ message: 'Произошла ошибка' });
+        next(err);
       }
     });
+};
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  userSchema
+    .findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
+      res
+        .cookie('jwt', token, {
+          maxAge: 3600000,
+          httpOnly: true,
+          sameSite: true,
+        })
+        .send({ token });
+    })
+    .catch(next);
 };
