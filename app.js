@@ -23,10 +23,10 @@ app.use(cookieParser());
 
 const { PORT = 3000 } = process.env;
 
+app.use(limiter);
+
 app.post('/signup', signUpValidation, createUser);
 app.post('/signin', signInValidation, login);
-
-app.use(limiter);
 
 app.use(router);
 

@@ -6,7 +6,7 @@ const signUpValidation = celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string().pattern(/https?:\/\/(www)?[0-9a-z\-._~:/?#[\]@!$&'()*+,;=]+#?$/im),
+    avatar: Joi.string().pattern(/^(http|https):\/\/(([A-Z0-9][A-Z0-9_#\-._~:/?[\]@!$&'()*+,;=]*)(\.[A-Z0-9#][A-Z0-9_-]*)+)/i),
     email: Joi.string().email().required(),
     password: Joi.string().required(),
   }),
